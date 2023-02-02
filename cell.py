@@ -1,4 +1,4 @@
-from tkinter import Button
+from tkinter import Button, Label
 import random
 import math
 
@@ -7,9 +7,12 @@ import settings
 
 class Cell:
     all = []
+    cell_count_label_obj = None
+    cell_count = settings.CELL_COUNT
 
     def __init__(self, x, y, is_mine=False):
         self.is_mine = is_mine
+        self.is_opened = False
         self.cell_btn_object = None
         self.x = x
         self.y = y
@@ -27,10 +30,26 @@ class Cell:
         btn.bind('<Button-3>', self.right_click_actions)
         self.cell_btn_object = btn
 
+    @staticmethod
+    def create_cell_count_label(location):
+        lbl = Label(
+            location,
+            bg="black",
+            fg="white",
+            text=f"Cells Left:{Cell.cell_count}",
+            width=12,
+            height=4,
+            font=("", 30)
+        )
+        Cell.cell_count_label_obj = lbl
+
     def left_click_actions(self, event):
         if self.is_mine:
             self.show_mine()
         else:
+            if self.surrounded_cells_mines_lenght == 0:
+                for cell_obj in self.surrounded_cells:
+                    cell_obj.show_cell()
             self.show_cell()
 
     def right_click_actions(self, event):
@@ -42,7 +61,16 @@ class Cell:
         self.cell_btn_object.configure(bg="red")
 
     def show_cell(self):
-        self.cell_btn_object.configure(text=self.surrounded_cells_mines_lenght)
+        if not self.is_opened:
+            Cell.cell_count -= 1
+            self.cell_btn_object.configure(text=self.surrounded_cells_mines_lenght)
+            # Replace the text of the cell label with the newer count
+            if Cell.cell_count_label_obj:
+                Cell.cell_count_label_obj.configure(
+                    text=f"Cells Left:{Cell.cell_count}"
+                )
+        # Mark the cell as opened( use this as the last line of the method)
+        self.is_opened = True
 
     @property
     def surrounded_cells(self):

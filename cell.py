@@ -1,6 +1,8 @@
 from tkinter import Button, Label
 import random
 import math
+import ctypes
+import sys
 
 import settings
 
@@ -12,6 +14,7 @@ class Cell:
 
     def __init__(self, x, y, is_mine=False):
         self.is_mine = is_mine
+        self.is_mine_candidate = False
         self.is_opened = False
         self.cell_btn_object = None
         self.x = x
@@ -50,15 +53,40 @@ class Cell:
             if self.surrounded_cells_mines_lenght == 0:
                 for cell_obj in self.surrounded_cells:
                     cell_obj.show_cell()
+                    # Cancel Left and Right Click events if the cell was opened:
+                    cell_obj.cell_btn_object.unbind('<Button-1>')
+                    cell_obj.cell_btn_object.unbind('<Button-3>')
             self.show_cell()
+            # If Mines count equals to the cell left count, player Won
+            if Cell.cell_count == settings.MINES_COUNT:
+                ctypes.windll.user32.MessageBoxW(
+                    0, "Congratulations! You won the game!", "Game Over", 0
+                )
+
+        # Cancel Left and Right Click events if the cell was opened:
+        self.cell_btn_object.unbind('<Button-1>')
+        self.cell_btn_object.unbind('<Button-3>')
+
+
 
     def right_click_actions(self, event):
-        print(event)
-        print("I am right click")
+        if not self.is_mine_candidate:
+            self.cell_btn_object.configure(
+                bg="orange"
+            )
+            self.is_mine_candidate = True
+        else:
+            self.cell_btn_object.configure(
+                bg="SystemButtonFace"
+            )
+            self.is_mine_candidate = False
 
     def show_mine(self):
-        # A logic to interrupt the game and display lost game
         self.cell_btn_object.configure(bg="red")
+        ctypes.windll.user32.MessageBoxW(
+            0, "You clicked on a mine!", "Game Over", 0
+        )
+        sys.exit()
 
     def show_cell(self):
         if not self.is_opened:
@@ -69,6 +97,10 @@ class Cell:
                 Cell.cell_count_label_obj.configure(
                     text=f"Cells Left:{Cell.cell_count}"
                 )
+            # If this was a mine candidate, then change color to default
+            self.cell_btn_object.configure(
+                bg="SystemButtonFace"
+            )
         # Mark the cell as opened( use this as the last line of the method)
         self.is_opened = True
 
